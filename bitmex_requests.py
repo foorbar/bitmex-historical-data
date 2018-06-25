@@ -51,9 +51,3 @@ def writeLargeJson(currency, startTime, endTime, interval, columns, file):
         output += getJsonChunk(currency, getTimeString(currentTime), getTimeString(nextHour), interval, columns);
         currentTime = getNextHour(currentTime);
     writeOut(output, file);
-
-start = datetime(2017, 1, 1, 0, 0);
-end = datetime(2017, 1, 2, 0, 0)
-cols = ["open", "close", "high", "low"];
-
-writeLargeJson("XBTUSD", start, end, "1m", cols,"data.txt");
