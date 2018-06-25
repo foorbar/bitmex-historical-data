@@ -3,15 +3,15 @@ import json;
 from datetime import datetime
 from datetime import timedelta
 
-open('data.txt', 'w').close();
-
+#generates a key-value pair in string format
 def generateFilter(currency):
     filterDictionary = {};
     filterDictionary["symbol"] = currency;
     filter = json.dumps(filterDictionary);
     return filter;
 
-def getCurrencyJson(currency, startTime, endTime, interval, columns):
+#makes api requests, doesn't exceed limit of entries per request
+def getJsonChunk(currency, startTime, endTime, interval, columns):
     filter = generateFilter(currency);
     start = startTime;
     end = endTime;
@@ -21,30 +21,39 @@ def getCurrencyJson(currency, startTime, endTime, interval, columns):
     print(response.status_code);
     return data;
 
-def writeOut(output):
-    with open('data.txt', 'a') as outfile:
+#writes the output json out to the output file
+def writeOut(output, file):
+    with open(file, 'a') as outfile:
         json.dump(output, outfile);
 
+#returns a datetime object for the next hour
 def getNextHour(time):
     nextHour = time + timedelta(hours = 1);
     return nextHour;
 
+#returns a string from the datetime object
 def getTimeString(time):
     timeString = time.strftime("%Y-%m-%d %H:%M");
     return timeString;
 
-def getBoundedCurrencyJson(currency, startTime, endTime, interval, columns):
+#supports requesting data that exceed limit of entries per request
+def writeLargeJson(currency, startTime, endTime, interval, columns, file):
+    #creates an empty output file
+    open(file, "w").close();
+
     currentTime = startTime;
     output = [];
+
+    #makes api requests in hourly chunks until the endTime is reached
     while currentTime != endTime:
         nextHour = getNextHour(currentTime);
         print(getTimeString(currentTime));
-        output += getCurrencyJson(currency, getTimeString(currentTime), getTimeString(nextHour), interval, columns);
+        output += getJsonChunk(currency, getTimeString(currentTime), getTimeString(nextHour), interval, columns);
         currentTime = getNextHour(currentTime);
-    writeOut(output);
+    writeOut(output, file);
 
 start = datetime(2017, 1, 1, 0, 0);
 end = datetime(2017, 1, 2, 0, 0)
 cols = ["open", "close", "high", "low"];
 
-getBoundedCurrencyJson("XBTUSD", start, end, "1m", cols)
+writeLargeJson("XBTUSD", start, end, "1m", cols,"data.txt");
